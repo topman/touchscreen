@@ -6,6 +6,7 @@ from django.contrib.auth.views import login, logout
 from django.contrib import admin
 admin.autodiscover()
 
+# comment added by Tower to test the git push
 
 urlpatterns = patterns('',
     # Example:

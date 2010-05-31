@@ -33,3 +33,8 @@ urlpatterns = patterns('',
 )
 
 
+if "screens.trac_feeds" in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'trac_feeds/', include("screens.trac_feeds.urls")),
+    )
+

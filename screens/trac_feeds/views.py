@@ -40,12 +40,18 @@ def get_feeds(request):
         total_num = len(channels.entries)
         entries = channels.entries[page_no*num_per_page : (page_no+1)*num_per_page]
 
-        response = {
-            "total_num" : total_num,
-            "entries" : gen_response(entries, feeds_type)
-        }
+        flag, resp = gen_response(entries, feeds_type)
+
+        if flag:
+            response = {
+                "status" : "ok",
+                "total_num" : total_num,
+                "entries" : resp
+            }
+        else:
+            response = {"status" : "error", "reason" : "Rss doesn't have some specific fields"}
     else:
-        response = []
+        response = {"status" : "error", "reason" : "Need post request"}
     return HttpResponse(simplejson.dumps(response), mimetype="application/json")
 
 def gen_response(entries, feeds_type):
@@ -61,8 +67,12 @@ def gen_response(entries, feeds_type):
     for entry in entries:
         item = {}
         for attr in attrs:
-            item[attr] = getattr(entry, attr)
+            # rss entry may not have the attr
+            try:
+                item[attr] = getattr(entry, attr)
+            except:
+                return False, None
         data.append(item)
-    return data
+    return True, data
         
 

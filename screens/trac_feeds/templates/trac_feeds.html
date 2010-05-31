@@ -189,6 +189,12 @@ function {{screen.hash}}()
     function process_result(response)
     {
         var content = "";
+        if (response.status == "error")
+        {
+            // error happens
+            alert(response.reason);
+            return;
+        }
         if (total_num == null)
         {
             total_num = response.total_num;

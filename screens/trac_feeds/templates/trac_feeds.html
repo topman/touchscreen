@@ -7,17 +7,22 @@
 <style>
     .background
     {
-        background-color:white;
+        /*background-color:white;*/
     }
+    .page_title{
+        width:768px;
+    }
+
     .content{
         /*background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/background.jpg);*/
-        background-color:#05774B;
-        border:5px solid silver;
+        /*background-color:#05774B;*/
+        background-color:black;
+        border:2px solid white;
         color:white;
-        height:80%;
-        margin:50px;
+        height:70%;
+        margin:10px 50px 0 50px;
         padding:20px;
-        width:80%;
+        width:1000px;
     }
     div.entry_loading
     {
@@ -123,13 +128,49 @@ function {{screen.hash}}()
     this.init = function()
     {        
         safelog('trac_feeds: initializing...');
+        adjust_style();
         setup();
     };
+
+    function adjust_style()
+    {
+        // adjust the width and make it fit the screen
+        var window_w = $(window).width();
+        var margin_left = (window_w - 768) / 2;
+        margin_left += "px";
+        $(".page_title").css({"margin-left":margin_left});
+        var margin_left_content;
+        if (window_w < 800)
+        {
+            // we force it to show 5 items per page
+            margin_left_content = (window_w - 790) / 2;
+            margin_left_content += "px";
+            num_per_page = 5;
+            $(".content").css({"margin-left":margin_left_content, "width" : "790px"});
+        }
+        else if(window_w < 1000)
+        {
+            margin_left_content = (window_w - 900) / 2;
+            margin_left_content += "px";
+            num_per_page = 8;
+            $(".content").css({"margin-left":margin_left_content, "width" : "900px"});
+        }
+        else
+        {
+            margin_left_content = (window_w - 1000) / 2;
+            margin_left_content += "px";
+            num_per_page = 10;
+            $(".content").css({"margin-left":margin_left_content, "width" : "1000px"});
+        }
+
+    }
 
     function key_check(e)
     {
         var key_id= (window.event) ? event.keyCode : e.keyCode;
-        if (key_id == 39)
+        var PAGE_DOWN = 34;
+        var PAGE_UP = 33;
+        if (key_id == PAGE_DOWN)
         {
             // arrow-right
             if (page_no == total_page - 1)
@@ -141,7 +182,7 @@ function {{screen.hash}}()
 
             setup();
         }
-        else if(key_id == 37)
+        else if(key_id == PAGE_UP)
         {
             // arrow-left
             if (page_no == 0)
@@ -182,12 +223,13 @@ function {{screen.hash}}()
     }
     function before_send_callback()
     {
-        $("div.entry_loading").fadeIn(300);
-        
+        $("div.entry_loading").show();
     }
 
     function process_result(response)
     {
+        //$("div.entry_loading").fadeOut(300);
+        $("div.entry_loading").hide();
         var content = "";
         if (response.status == "error")
         {
@@ -204,7 +246,6 @@ function {{screen.hash}}()
         $("div.entry_page").html(""+(page_no+1)+"/"+total_page);
         ret = response.entries;
 
-        $("div.entry_loading").fadeOut(300);
         for(var i=0; i<ret.length; i++)
         {
             content += format_rss_data(ret[i]);
@@ -306,6 +347,7 @@ function {{screen.hash}}()
 </script>
 
 <div class="background"></div>
+<div class="display_title page_title">Trac Feeds</div>
 <div class="content">
 <div class="entries"></div>
 <div class="entry_page"></div>

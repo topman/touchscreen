@@ -1,0 +1,11 @@
+this screen plugin needs feedparser supports.
+
+You can **easy_install feedparser** to your system.
+
+And add the following codes to the root urls.py:
+
+if "screens.trac_feeds" in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'trac_feeds/', include("screens.trac_feeds.urls")),
+    )
+

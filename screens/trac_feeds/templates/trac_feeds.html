@@ -63,9 +63,18 @@
     }
     div.entry span.entry_datetime
     {
-        color:black;
+        color:#CC5900;
         font-size:10px;
         padding-left:10px;
+    }
+    div.orange
+    {
+        color:yellow;
+        font-size:10px;
+        position : absolute;
+        bottom:1%;
+        display:block;
+        left:60%;
     }
     div.entry span.entry_title
     {
@@ -243,7 +252,9 @@ function {{screen.hash}}()
             total_page = Math.ceil(total_num / num_per_page);
         }
         // set the page number 
-        $("div.entry_page").html(""+(page_no+1)+"/"+total_page);
+        var page_html = "";
+        page_html += (page_no+1)+"/"+total_page;
+        $("div.entry_page").html(page_html);
         ret = response.entries;
 
         for(var i=0; i<ret.length; i++)
@@ -358,5 +369,6 @@ function {{screen.hash}}()
         <img src="{{SITE_ROOT}}/static/screens/trac_feeds/loading.gif"></img>
     </span>
 </div>
+<div class="orange">Press Page Up/Page Down to paginate</div>
 </div>
 

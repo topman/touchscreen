@@ -38,3 +38,8 @@ if "screens.trac_feeds" in settings.INSTALLED_APPS:
         (r'trac_feeds/', include("screens.trac_feeds.urls")),
     )
 
+if "screens.twitter_feeds" in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'twitter_feeds/', include("screens.twitter_feeds.urls")),
+    )
+

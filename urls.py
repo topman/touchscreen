@@ -43,3 +43,8 @@ if "screens.twitter_feeds" in settings.INSTALLED_APPS:
         (r'twitter_feeds/', include("screens.twitter_feeds.urls")),
     )
 
+if "screens.rt_feeds" in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'rt_feeds/', include("screens.rt_feeds.urls")),
+    )
+

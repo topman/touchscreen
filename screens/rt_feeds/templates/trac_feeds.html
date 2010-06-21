@@ -1,0 +1,374 @@
+<!--
+    trac_feeds.html
+    by Tower Joo, 22/5/2010
+
+    This screen displays the feeds of a specified trac site
+-->
+<style>
+    .background
+    {
+        /*background-color:white;*/
+    }
+    .page_title{
+        width:768px;
+    }
+
+    .content{
+        /*background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/background.jpg);*/
+        /*background-color:#05774B;*/
+        background-color:black;
+        border:2px solid white;
+        color:white;
+        height:70%;
+        margin:10px 50px 0 50px;
+        padding:20px;
+        width:1000px;
+    }
+    div.entry_loading
+    {
+        display:none;
+        width:50%;
+        height:50%;
+        border:5px solid black;
+        display:none;
+        position:absolute;
+        z-index:99999;
+        top:25%;
+        left:25%;
+        font-size:30px;
+        background-color:white;
+        color:black;
+        text-align:center;
+    }
+    div.entry_loading span.vertical_middle
+    {
+        position:relative;
+        top:40%;
+    }
+    div.content div.entry_page
+    {
+        position:absolute;
+        bottom:1%;
+        display:block;
+        left:45%;
+    }
+    div.entry_loading span.img
+    {
+        position:relative;
+        top:60%;
+        left:45%;
+    }
+    div.entry{
+        padding-top:5px;
+    }
+    div.entry span.entry_datetime
+    {
+        color:#CC5900;
+        font-size:10px;
+        padding-left:10px;
+    }
+    div.orange
+    {
+        color:yellow;
+        font-size:10px;
+        position : absolute;
+        bottom:1%;
+        display:block;
+        left:60%;
+    }
+    div.entry span.entry_title
+    {
+        color:white;
+        font-size:20px;
+        padding-left:25px;
+        font-family:"serif";
+    }
+    div.entry span.entry_title em
+    {
+        border-bottom:1px dotted yellow;
+        color:yellow;
+        font-style:normal;
+        text-decoration:none;
+        
+    }
+    div.entry span.entry_author
+    {
+        color:black;
+        font-size:10px;
+        font-style:italic;
+    }
+    div.entry a:link {
+        background-position:3px;
+        background-repeat:no-repeat;
+        text-decoration:none;
+    }
+    div.entry a:hover {
+        background-position:3px;
+        background-repeat:no-repeat;
+        border-bottom: 1px dotted yellow;
+    }
+    div.entry a.wiki{
+        background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/wiki.png);
+    }
+    div.entry a.newticket{
+        background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/newticket.png);
+    }
+    div.entry a.changeset{
+        background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/changeset.png);
+    }
+    div.entry a.closedticket{
+        background-image:url({{SITE_ROOT}}/static/screens/trac_feeds/closedticket.png);
+    }
+</style>
+
+<script type="text/javascript">
+
+function {{screen.hash}}()
+{
+    document.onkeyup = key_check;  
+    var cached_feeds = {};   // object for cache
+    var bypass_cache = {{ screen.bypass_cache }};       // whether bypass the cache
+    var feeds_url = "{{ screen.feeds_url }}";
+    var num_per_page = "{{ screen.num_per_page }}";
+    var feeds_type = "{{ screen.feeds_type }}";
+    var page_no = 0;    // as default
+    var total_num = null;   // set after the first loading feeds
+    var total_page = null; 
+    this.init = function()
+    {        
+        safelog('trac_feeds: initializing...');
+        adjust_style();
+        setup();
+    };
+
+    function adjust_style()
+    {
+        // adjust the width and make it fit the screen
+        var window_w = $(window).width();
+        var margin_left = (window_w - 768) / 2;
+        margin_left += "px";
+        $(".page_title").css({"margin-left":margin_left});
+        var margin_left_content;
+        if (window_w < 800)
+        {
+            // we force it to show 5 items per page
+            margin_left_content = (window_w - 790) / 2;
+            margin_left_content += "px";
+            num_per_page = 5;
+            $(".content").css({"margin-left":margin_left_content, "width" : "790px"});
+        }
+        else if(window_w < 1000)
+        {
+            margin_left_content = (window_w - 900) / 2;
+            margin_left_content += "px";
+            num_per_page = 8;
+            $(".content").css({"margin-left":margin_left_content, "width" : "900px"});
+        }
+        else
+        {
+            margin_left_content = (window_w - 1000) / 2;
+            margin_left_content += "px";
+            num_per_page = 10;
+            $(".content").css({"margin-left":margin_left_content, "width" : "1000px"});
+        }
+
+    }
+
+    function key_check(e)
+    {
+        var key_id= (window.event) ? event.keyCode : e.keyCode;
+        var PAGE_DOWN = 34;
+        var PAGE_UP = 33;
+        if (key_id == PAGE_DOWN)
+        {
+            // arrow-right
+            if (page_no == total_page - 1)
+            {
+                page_no = 0;
+            }
+            else
+                page_no ++;
+
+            setup();
+        }
+        else if(key_id == PAGE_UP)
+        {
+            // arrow-left
+            if (page_no == 0)
+            {
+                page_no = total_page - 1;
+            }
+            else
+                page_no --;
+
+            setup();
+        }
+    }
+
+    function setup()
+    {
+        var post_data = "feeds_type=" + feeds_type + 
+            "&feeds_url=" + escape(feeds_url) +
+            "&num_per_page=" + num_per_page +
+            "&page_no=" + page_no;
+        if (!bypass_cache)
+        {
+            // check whether the feeds in the cache
+            if (page_no in cached_feeds)
+            {
+                process_result(cached_feeds[page_no]);
+                return;
+            }
+        }
+        $.ajax(
+            {
+                url:"{% url trac_get_feeds %}", 
+                data: post_data,
+                type: "POST",
+                beforeSend: before_send_callback,
+                success: process_result, 
+                dataType: "json"
+            });
+    }
+    function before_send_callback()
+    {
+        $("div.entry_loading").show();
+    }
+
+    function process_result(response)
+    {
+        //$("div.entry_loading").fadeOut(300);
+        $("div.entry_loading").hide();
+        var content = "";
+        if (response.status == "error")
+        {
+            // error happens
+            alert(response.reason);
+            return;
+        }
+        if (total_num == null)
+        {
+            total_num = response.total_num;
+            total_page = Math.ceil(total_num / num_per_page);
+        }
+        // set the page number 
+        var page_html = "";
+        page_html += (page_no+1)+"/"+total_page;
+        $("div.entry_page").html(page_html);
+        ret = response.entries;
+
+        for(var i=0; i<ret.length; i++)
+        {
+            content += format_rss_data(ret[i]);
+        }
+        $("#screens div.content div.entries").html(content);
+        if(page_no in cached_feeds)
+        {
+            safelog("cache hit");
+        }
+        else
+        {
+            safelog("cache miss");
+            // cache the result
+            cached_feeds[page_no] = response;
+        }
+    }
+
+    function format_rss_data(entry)
+    {
+        // format the rss data to the correct html
+        var bg_class = get_feed_img(entry.title);
+        var html = "<div class='entry'><a href='" + entry.link + "' class='" + bg_class + "'>" ; 
+        html += "<span class='entry_title'>" + gen_linked_title(entry.link, entry.title) + "</span>";
+        html += "<span class='entry_author'> by " + entry.author + "</span>";
+        html += "<span class='entry_datetime'>" + entry.updated + "</span>";
+        html += "</a></div>";
+        return html;
+    }
+    function get_feed_img(title)
+    {
+        // get the background image class of the feed
+        var img;
+        if (/^Ticket #/.test(title))
+        {
+            if (/closed$/.test(title))
+                img = "closedticket";
+            else
+                img = "newticket";
+        }
+        else if (/^Changeset/.test(title))
+        {
+            img = "changeset";
+        }
+        else
+            img = "wiki";
+        return img;
+    }
+    function gen_linked_title(link, title)
+    {
+        // to generate the linked title for trac feeds
+        var linked_title = "";
+        var keywords = {"Ticket" : 2, "Changeset" : 2};
+        var first_word_of_title = title.split(" ")[0];
+        if (first_word_of_title in keywords)
+        {
+            var splited = title.split(" ");
+            var front = splited.slice(0, 1).join(" ");
+            var emed_word = splited.slice(1, keywords[first_word_of_title]).join(" ");
+            var end = splited.slice(keywords[first_word_of_title], splited.length).join(" ");
+            linked_title = front + " <em>" + emed_word + "</em> " + end;
+        }
+        else
+        {
+            var splited = title.split(" ");
+            var front = splited[0];
+            var end = splited.slice(1, splited.length).join(" ");
+            linked_title = "<em>" + front + " </em>" + end;
+        }
+        return linked_title;
+    }
+
+    this.start = function()
+    {
+        safelog('trac_feeds: starting...');
+
+        // scale the wifi usage image to fit inside the parent
+        //$("#{{screen.hash}}_img").scale("center");
+
+        // start the image refresh
+       // $("#{{screen.hash}}_img").refreshImage("start", "debug");
+    };
+
+    this.stop = function()
+    {
+        safelog('trac_feeds: stopping');
+
+        // stop the image refresh
+        //$("#{{screen.hash}}_img").refreshImage("stop", "debug");
+    };
+
+    this.resize = function()
+    {
+        // re-scale every time the window is resized
+        //$("#{{screen.hash}}_img").scale("center");
+    };
+
+} {{screen.hash}} = new {{screen.hash}}();
+
+</script>
+
+<div class="background"></div>
+<div class="display_title page_title">Trac Feeds</div>
+<div class="content">
+<div class="entries"></div>
+<div class="entry_page"></div>
+<div class="entry_loading">
+    <span class="vertical_middle">Loading new feeds ...
+    </span>
+    <span class="img">
+        <img src="{{SITE_ROOT}}/static/screens/trac_feeds/loading.gif"></img>
+    </span>
+</div>
+<div class="orange">Press Page Up/Page Down to paginate</div>
+</div>
+

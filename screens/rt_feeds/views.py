@@ -7,6 +7,8 @@ from django.utils import simplejson
 import feedparser
 
 def get_feeds(request):
+    """Generate the feeds of the specific RSS url
+    """
     FEED_TYPE = {
         "0" : "timeline",
         "1" : "tickets",
@@ -25,7 +27,7 @@ def get_feeds(request):
         #feeds_url = "http://trac.edgewall.org/timeline?changeset=on&ticket=on&milestone=on&wiki=on&max=50&authors=&daysback=90&format=rss"
         # limit the numbers
 
-
+        return HttpResponse(feeds_url)
         channels = feedparser.parse(feeds_url)
         return HttpResponse(channels)
         return HttpResponse(simplejson.dumps(channels), mimetype="application/json")

@@ -48,3 +48,8 @@ if "screens.rt_feeds" in settings.INSTALLED_APPS:
         (r'rt_feeds/', include("screens.rt_feeds.urls")),
     )
 
+if "screens.ftp_usersmap" in settings.INSTALLED_APPS:
+    urlpatterns += patterns('',
+        (r'ftp_usersmap/', include("screens.ftp_usersmap.urls")),
+    )
+

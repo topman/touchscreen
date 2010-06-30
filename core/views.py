@@ -42,7 +42,10 @@ def display(request):
 def menu(request):
     """ View for displaying menu """
     rc = RequestContext(request, processors=[plugin_processor, settings_processor])
-    return render_to_response('menu.html', context_instance=rc)
+    return render_to_response('menu.html', {
+        'screens':PLUGIN_MANAGER['ScreenManager'].plugins,
+        'screen_animations':PLUGIN_MANAGER['ScreenAnimationManager'].plugins,
+    }, context_instance=rc)
 
 
 def proxy(request):

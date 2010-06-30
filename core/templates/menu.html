@@ -202,6 +202,7 @@
                     case 2:
                         init_2($menu);
                         break;
+                    case 3:
                     case 4:
                         init_4($menu);
                         break;
@@ -218,6 +219,12 @@
                         init_12($menu);
                         break;
                 }
+            }
+
+            function init_2($menu)
+            {
+                $children = $menu.children()
+                $children.slice(0,2).css('top', 100)
             }
             
             function init_4($menu) {
@@ -256,6 +263,8 @@
                     case 2:
                         hide_2($menu);
                         break;
+                    case 3:
+                    // ADDED
                     case 4:
                         hide_4($menu);
                         break;
@@ -338,8 +347,10 @@
             function show($menu){
                 switch($menu.children().length) {
                     case 2:
+                    case 3:
                         show_2($menu);
                         break;
+                    // ADDED
                     case 4:
                         show_4($menu);
                         break;
@@ -776,16 +787,27 @@
         </div>
         <div id="status">Main Menu</div>
         <div id="menus">
-            
             <div id="mainmenu" title="Main Menu" class="menu">
+                {% for key, screen in screens.items %}
+                    <div class="button button_orange" onclick="submenu('{{ screen.hash }}')">{{ screen.hash }}</div>
+                {% endfor %}
+            
+                <!--
                 <div class="button button_orange" onclick="submenu('osl');">Open Source Lab</div>
                 <div class="button button_red" onclick="submenu('network');">Network Engineering</div>
                 <div class="button button_blue">Data Center Map</div>
                 <div class="button button_purple" onclick="submenu('webcams');send('slideshow','show','screens_webcams');">Webcams</div>
                 <div class="button button_yellow" onclick="send('slideshow','show','screens_weather');">Weather</div>
+                -->
                 <div class="button button_green" onclick="show_help();">Help</div>
             </div>
+            {% for key, screen in screens.items %}
+                <div id="{{ screen.hash }}" title="{{screen.hash}}" class="menu">
+                    <div class="button button_blue" onclick="submenu('{{ screen.hash }}'); send('slideshow','show','{{ screen.hash}}');">{{ screen.hash }}</div>
+                </div>
+            {% endfor %}
             
+            <!--
             <div id="osl" title="Open Source Lab" class="menu">
                 <div class="button button_orange" onclick="submenu('osl_network_graphs'); send('slideshow','show','screens_osl_bandwidth');">Network Graphs</div>
                 <div class="button button_red" onclick="send('slideshow','show','screens_ftp_traffic');">FTP Status</div>
@@ -827,6 +849,7 @@
                 <div class="button button_blue" onclick="send('slideshow','show','screens_wifi_usage');">Wifi Usage Map</div>
                 <div class="button button_purple" onclick="send('slideshow','show','screens_wifi_bandwidth');">Wifi Bandwidth Map</div>
             </div>
+            -->
             <div id="help" title="Help">
                 <div id="help_display">
                     <img src="{{MEDIA}}/images/menu/help/display.png"/>

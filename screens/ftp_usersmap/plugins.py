@@ -15,6 +15,12 @@ class FTPPingMapSettings(forms.Form):
             initial=100,
     )
 
+    marker_max = forms.IntegerField(
+            label='Marker Max Count in map',
+            help_text='how many markers shown in the map',
+            initial=20,
+    )
+
 
 class screens_ftp_usersmap(Screen):    
     template='ftpusersmap.html'

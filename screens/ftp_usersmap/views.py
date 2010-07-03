@@ -11,8 +11,8 @@ def get_user_info(request):
     """mock the online ftp users
     """
     import random
-    lat = random.randint(50, 70);
-    lng = random.randint(-70, -50)
+    lat = random.randint(30, 40);
+    lng = random.randint(-120, -83)
     title = "Mock position"
     ret = """
     <rss version="2.0"><channel>

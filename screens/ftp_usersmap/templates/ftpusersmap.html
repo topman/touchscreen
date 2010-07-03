@@ -1,4 +1,4 @@
-<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false&language=en-US"></script>
 <style>
     body{
         cursor:pointer;
@@ -60,6 +60,9 @@
         
         overflow:hidden;
     }
+    #{{screen.hash}}_control span{
+        color:yellow;
+    }
 </style>
 
 
@@ -86,12 +89,8 @@ function ping(x, y, canvas){
     return targets
 }
 
-
-
 function {{screen.hash}}()
 {
-    var target = document.getElementById("remove_markers");
-    console.log(target);
     var _this = this;
     var canvas = undefined;
     var cycle = undefined;
@@ -99,42 +98,73 @@ function {{screen.hash}}()
     var pings = Array();
     var $locations = undefined;
     var running = false;
-    var markers = [];
-    var map, marker;
+    _this.markers = [];
+    _this.info_windows = [];
+    _this.map = null;
+    var show_num = 0;
     function init_map(lat, lng, marker_title) {
         var latlng = new google.maps.LatLng(lat, lng);
 
         // To add the marker to the map, call setMap();
         var myOptions = {
-            zoom: 2,
+            zoom: 4,
             center: latlng,
+            disableDefaultUI: true,
             mapTypeId: google.maps.MapTypeId.ROADMAP
         };
-        map = new google.maps.Map(document.getElementById("google_map"), myOptions);
-        marker = new google.maps.Marker({
+        _this.map = new google.maps.Map(document.getElementById("google_map"), myOptions);
+        var marker = new google.maps.Marker({
             position: latlng,
-            map : map
+            map : _this.map
         });
-        markers.push(marker);
+        _this.markers.push(marker);
+        var info_window = new google.maps.InfoWindow({
+            content: "the init marker"
+        });
+        _this.info_windows.push(info_window);
+        // make the marker clickable
+        $("#google_map").css("z-index", 99);
+        var m_index = _this.markers.length - 1;
+        var i_index = _this.info_windows.length - 1;
+        show_num ++;
+        google.maps.event.addListener(_this.markers[m_index], 'click', function(event){
+            _this.info_windows[i_index].open(_this.map, _this.markers[m_index]);
+            _this.map.setCenter(event.latLng);
+        });
     }
 
-    function remove_all_markers()
+    _this.refresh_all_markers = function()
     {
-        alert("hello");
-        for(var i=0; i<markers.length; i++)
+        for(var i=0; i<_this.markers.length; i++)
         {
-            markers[i].setMap();
+            _this.markers[i].setMap();
         }
+        $("#{{screen.hash}}_locations").html("");
+        show_num = 0;
+        cycle = setTimeout(get_point, {{screen.ping_interval}});
     }
 
-    function update_map(lat, lng, marker_title)
+    function update_map(lat, lng, marker_title, info_window_content)
     {
+        show_num ++;
         var latlng = new google.maps.LatLng(lat, lng);
-        marker = new google.maps.Marker({
+        var marker = new google.maps.Marker({
             position: latlng,
-            map : map
+            map : _this.map
         });
-        markers.push(marker);
+        _this.markers.push(marker);
+        var info_window = new google.maps.InfoWindow({
+            content : info_window_content
+        });
+        //alert(_this.info_windows.length);
+        //alert(_this.markers.length);
+        _this.info_windows.push(info_window);
+        var m_index = _this.markers.length - 1;
+        var i_index = _this.info_windows.length - 1;
+        google.maps.event.addListener(_this.markers[m_index], 'click', function(event){
+            _this.info_windows[i_index].open(_this.map, _this.markers[m_index]);
+            _this.map.setCenter(event.latLng);
+        });
     }
 
     function adjust_map()
@@ -143,7 +173,7 @@ function {{screen.hash}}()
     }
 
     
-    this.init = function()
+    _this.init = function()
     {        
         safelog('ftp_user_map: initializing...');
         adjust_map();
@@ -175,14 +205,14 @@ function {{screen.hash}}()
         });
     };
 
-    this.start = function()
+    _this.start = function()
     {
         safelog('ftp_user_map: starting...');
         running = true;
         get_point();
     };
 
-    this.stop = function()
+    _this.stop = function()
     {
         safelog('ftp_user_map: stopping');
         running = false;
@@ -195,6 +225,7 @@ function {{screen.hash}}()
     function get_point() {
         // failsafe in case a time is started right as screen is stopped
         if (!running) {return;}
+        if (show_num >= {{ screen.marker_max }}) return;
         //$.get('/proxy/',{url:'http://ftp-osl.osuosl.org:8000/'},
         $.get('/ftp_usersmap/get_user_info/',{},create_point);
 
@@ -212,6 +243,23 @@ function {{screen.hash}}()
         */
         //running = false;
     }
+    this.open_info_window = function(lat, lon)
+    {
+       var index = -1;
+       for(; i< _this.markers.length; i++)
+       {
+            var pos = _this.markers[i].getPosition();
+            if (lat == pos.lat() && lon == pos.lng())
+            {
+                index = i;
+                break;
+            }
+       }
+       if (index != -1)
+       {
+            _this.info_windows[index].open(_this.map, _this.markers[index]); 
+       }
+    }
     
     function create_point(data) {
         $item = $(data).find('item title');
@@ -222,7 +270,7 @@ function {{screen.hash}}()
             lat = $item[1].text;
             lon = $item[2].text;
 
-            update_map(lat, lon, "NYC");
+            update_map(lat, lon, "NYC", "NYC");
     
             // get pixel coords and create a ping animation
             coords = get_coords(lat, lon);
@@ -236,7 +284,7 @@ function {{screen.hash}}()
             }
             
             // create a scrolling label for the new point
-            $locations.append('<li>'+label+'</li>');
+            $locations.append('<li onclick=\'{{screen.hash}}.open_info_window("' + lat + '", "' + lon + '")\'>'+label+'</li>');
             if ($locations.children().length > 13) {
                 $locations.trigger('next');
             }
@@ -271,12 +319,13 @@ function {{screen.hash}}()
 <div class="background"></div>
 <div class="content">
     <div id="google_map"></div>
-    <div id="{{screen.hash}}_canvas" class="canvas"></div>
+
+    <div id="{{screen.hash}}_canvas" class="canvas" style="z-index:-999" ></div>
     
     <div class="display_tile display_title">Realtime Sample of OSL FTP Users</div>
     <ul id="{{screen.hash}}_locations" class="display_tile display_content">
     </ul>
-    <div id="{{screen.hash}}_control" class="display_tile display_content">
-    <a href="#" id="remove_markers">Remove all markers</a> 
+    <div id="{{screen.hash}}_control" style="z-index:999" class="display_tile display_content">
+    <span onclick="{{ screen.hash }}.refresh_all_markers()">Refresh all markers</a> 
     </div>
 </div>
